@@ -94,7 +94,7 @@ Author: **Nguyen Thu Ha**
 - Các bước cấu hình
     - Thiết lập master-slave
     - Thiết lập PostgreSQL HA với Pgpool-II
-- [Chi tiết các bước cấu hình]
+- [Chi tiết các bước cấu hình](https://github.com/nguyenha-meiii/vdt2024_phase2/tree/main/PostgresSQL%20HA)
 
 ### Mục tiêu
 - Xây dựng hệ thống master - slave với node slave chỉ phục vụ read queries còn master node phục vụ cả read-write queries và nếu master node bị hỏng 1 node slave lên thay thế làm node master
