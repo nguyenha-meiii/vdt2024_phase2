@@ -26,7 +26,7 @@ Author: **Nguyen Thu Ha**
 
 ### Phân tích mô hình tham khảo (AWS Aurora)
 
-### Ý tưởng
+### Ý tưởng kết hợp HAproxy + PgBouncer + rempmgr
 - Xây dựng 2 enpoint: writer endpoint và read endpoint
 - 
 
@@ -49,6 +49,7 @@ Author: **Nguyen Thu Ha**
 ### Setup PgBouncer 
 - Tutorial: [Document](https://www.linkedin.com/pulse/efficient-postgresql-management-complete-guide-installing-configuring-rxkzc/)
 - Tutorial youtube: [Youtube](https://www.youtube.com/watch?v=ddKm7a7xOpk&t=196s&pp=ygUoc2V0IHVwIGFuZCBjb25maWd1cmUgcGdib3VuY2VyIG9uIHVidW50dQ%3D%3D)
+- https://severalnines.com/blog/guide-using-pgbouncer/
 
 ## 3. Pgpool-II
 
@@ -68,6 +69,8 @@ Author: **Nguyen Thu Ha**
 - Nhận xét:
     - Pgpool không thực sự tốt trong connnection pooling đặc biệt với số lượng client nhỏ. Do mỗi tiến trình con có 1 pool riêng và không có cách kiểm soát yêu cầu kết nối nào sẽ đến tiến trình con nào.
 
+### Load balancing in PgPool-II
+- Hiện tại Pgpool-II đã có version 4.5.3
 
 ### Setup Pgpool-II
 

@@ -1,22 +1,23 @@
-# Set up PostgreSQL High Availability with Pgpool Tutorial
+# Set up PostgreSQL High Availability with HAproxy Tutorial
 
 ## 1. Set up master-slave
 
 ### Step 0: Set up proxy for virtual machine
-- Set up apt:
- ```shell
-    sudo nano /etc/apt/apt.conf
-    Acquire::http::Proxy "http://10.61.11.42:3128";
-    Acquire::https::Proxy "https://10.61.11.42:3128";
-    
-```
-- Set up openssh
+- Set up openssh (nên set up ssh trước)
  ```shell
     /* install openssh */
     sudo apt install openssh-server  
 
     /* ssh from local terminal */
     ssh username@ip
+```
+
+- Set up apt:
+ ```shell
+    sudo nano /etc/apt/apt.conf
+    Acquire::http::Proxy "http://10.61.11.42:3128";
+    Acquire::https::Proxy "https://10.61.11.42:3128";
+    
 ```
 
 - Set up docker:
@@ -174,7 +175,7 @@ https_proxy=10.61.11.42:3128
     $ sudo vi /etc/postgresql/14/main/pg_hba.conf
 
     # Thêm các địa chỉ IP của các node slave vào cuối file
-    host    replication     replicator      172.16.149.137/24       md5
+    host    replication     replicator      172.16.149.136/24       md5
     host    replication     replicator      172.16.149.137/24       md5
 
     # Khởi động lại PostgreSQL
@@ -186,20 +187,140 @@ https_proxy=10.61.11.42:3128
 - Thực hiện cấu hình slave theo các bước sau:
 
  ```shell
-    # Chuyển qua user postgres
-    $ sudo vi /etc/postgresql/14/main/pg_hba.conf
+$ systemctl stop postgresql
+$ rm -rf /var/lib/postgresql/14/main/*
 
-    # Thêm các địa chỉ IP của các node slave vào cuối file
-    host    replication     replicator      172.16.149.136/24       md5
-    host    replication     replicator      172.16.149.137/24       md5
+# Truy cập vào user postgres
+$ sudo su - postgres
+$ rm -rf /var/lib/postgresql/14/main/*
+$ pg_basebackup -h 172.16.149.134 -D /var/lib/postgresql/14/main -U replicator -P -v -R -X stream -C -S slave_1
+$ exit
 
-    # Khởi động lại PostgreSQL
-    $ systemctl restart postgresql
+# Khởi động lại postgreSQL
+$ systemctl start postgresql
+```
+
+- Kết quả sau khi setup sẽ như hình:
+![img](../assets/streaming_replication.png)
+
+<!-- 
+sudo -i -u postgres psql -c "ALTER USER postgres PASSWORD '123456';" -->
+
+### Step 4: Check master-slave
+
+
+## 2. Set up Haproxy 
+
+### Step 1: Install HAproxy
+
+- Set up Haproxy node:
+ ```shell
+sudo apt update
+
+sudo apt install net-tools
+
+sudo apt -y install haproxy
+```
+
+### Step 2: Config HAproxy
+
+```shell
+sudo vi /etc/haproxy/haproxy.cfg
+```
+- Chỉnh sửa file như sau:
+```shell
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+    # Default SSL material locations
+    ca-base /etc/ssl/certs
+    crt-base /etc/ssl/private
+
+    ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+    ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+    ssl-default-bind-options ssl-min-ver TLSv1.2 no-tls-tickets
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+    errorfile 400 /etc/haproxy/errors/400.http
+    errorfile 403 /etc/haproxy/errors/403.http
+    errorfile 408 /etc/haproxy/errors/408.http
+    errorfile 500 /etc/haproxy/errors/500.http
+    errorfile 502 /etc/haproxy/errors/502.http
+    errorfile 503 /etc/haproxy/errors/503.http
+    errorfile 504 /etc/haproxy/errors/504.http
+
+frontend stats
+    bind *:8404
+    option http-use-htx
+    http-request use-service prometheus-exporter if { path /metrics }
+    stats enable
+    stats uri /stats
+    stats refresh 10s
+
+# Frontend for write traffic
+frontend pgsql_write
+    bind *:5001
+    mode tcp
+    default_backend pgsql_write_backend
+
+# Frontend for read traffic
+frontend pgsql_read
+    bind *:5002
+    mode tcp
+    default_backend pgsql_read_backend
+
+# Backend for write traffic (primary database)
+backend pgsql_write_backend
+    mode tcp
+    option pgsql-check user haproxy
+    server primary 172.16.149.134:5432 maxconn 100 check
+
+# Backend for read traffic (replica databases)
+backend pgsql_read_backend
+    mode tcp
+    balance roundrobin
+    option pgsql-check user haproxy
+    server replica1 172.16.149.136:5432 maxconn 100 check
+    server replica2 172.16.149.137:5432 maxconn 100 check
 
 ```
+
+### Step 3: Test read/write splitting with HAproxy
+- Truy cập vào giao diện của HAproxy ở địa chỉ http://172.16.149.139:8404/stats
+
+![img](../assets/HAprxoy.png)
+
+- Test read/write splitting:
+    - Thực hiện write queries tại port 5001:
+
+    ```shell
+    psql -h 172.16.149.139 -U postgres -p 5001
+    ```
+    ![img](../assets/proxy_write_port.png)
     
 
+    - Thực hiện read queries tại port 5002:
 
-sudo pg_basebackup -h 172.16.149.134 -D /var/lib/postgresql/14/main -U replicator -P -v -R -X stream -C -S slave_1
+    ```shell
+    psql -h 172.16.149.139 -U postgres -p 5002
+     insert into test values (2);
+    ```
+    ![img](../assets/proxy_read_port.png)
 
-sudo -i -u postgres psql -c "ALTER USER postgres PASSWORD '123456';"
+
+
+
