@@ -21,16 +21,7 @@ Author: **Nguyen Thu Ha**
     - 
 - anc
 
-
-## 1. Research
-
-### Phân tích mô hình tham khảo (AWS Aurora)
-
-### Ý tưởng kết hợp HAproxy + PgBouncer + rempmgr
-- Xây dựng 2 enpoint: writer endpoint và read endpoint
-- 
-
-## 2. PgBouncer
+## 1. PgBouncer
 
 ### Tổng quan
 - PgBouncer:
@@ -51,7 +42,7 @@ Author: **Nguyen Thu Ha**
 - Tutorial youtube: [Youtube](https://www.youtube.com/watch?v=ddKm7a7xOpk&t=196s&pp=ygUoc2V0IHVwIGFuZCBjb25maWd1cmUgcGdib3VuY2VyIG9uIHVidW50dQ%3D%3D)
 - https://severalnines.com/blog/guide-using-pgbouncer/
 
-## 3. Pgpool-II
+## 2. Pgpool-II
 
 ### Tổng quan
 - Pgpool-II hỗ trợ 
@@ -68,23 +59,42 @@ Author: **Nguyen Thu Ha**
 - Kernel điều hướng các kết nối mới tới 1 trong các tiến trình con (cả Pgpool-II và end users đều không thể quyết định tiến trình con nào sẽ nhận kết nối). Nếu không có tiến trình con nào nhận yêu cầu kết nối thì yêu cầu kết nối sẽ được đẩy vào hàng đợi
 - Nhận xét:
     - Pgpool không thực sự tốt trong connnection pooling đặc biệt với số lượng client nhỏ. Do mỗi tiến trình con có 1 pool riêng và không có cách kiểm soát yêu cầu kết nối nào sẽ đến tiến trình con nào.
+    - Pgpool làm rất tốt việc load balancing và là tool xây dựng cho postgreSQL
 
 ### Load balancing in PgPool-II
 - Hiện tại Pgpool-II đã có version 4.5.3
 
-### Setup Pgpool-II
+### Config Pgpool-II
+- [Tutorial](https://elroydevops.tech/postgresql-high-availability-master-slave/)
+
+## 3. HAproxy
+
+### Tổng quan
+
+### Setup and config HAproxy cho load balancing
 
 ## 4. Xây dựng mô hình
-- PgBouncer: Chỉ đảm nhận connection pooling
+- Connection pooling: pgBouncer
 
-- Pgpool-II:
-    - Đảm nhận Automatic failover cho cluster=> viết script để khi primary node gặp lỗi sẽ chuyển sang standby 
-    - High availability => PgBouncer có các watchdog (giống các replica) để thay thế khi gặp failover
-    - Load balancing: sau khi xem xét 4 lựa chọn cho PostgreSQL database ở [link](https://www.heatware.net/postgresql/postgresql-load-balancing-options-ha/) thì Pgpool-II là tối ưu nhất => Có thể config Pgpool-II để gửi write requests đến primary node và read requests đến replicas.
+- Load balancing
+    - Pgpool-II:
+        - Đảm nhận Automatic failover cho cluster=> viết script để khi primary node gặp lỗi sẽ chuyển sang standby 
+        - High availability => PgBouncer có các watchdog (giống các replica) để thay thế khi gặp failover
+        - Load balancing: sau khi xem xét 4 lựa chọn cho PostgreSQL database ở [link](https://www.heatware.net/postgresql/postgresql-load-balancing-options-ha/) thì Pgpool-II là tối ưu nhất => Có thể config Pgpool-II để gửi write requests đến primary node và read requests đến replicas.
+Hoặc
+    - HAproxy
+
+- Automatic failover and backup: repmgr
 
 - PostgreSQL built-in streaming replication: sync data giữa primary và replicas
+
+
 - Mô hình đơn giản như sau:
 
+    - Sử dụng HAproxy cho load balancing:
+    ![img](./assets/model_HAproxy.png)
+
+    - Sử dụng pgpool-II cho load balancing:
 
 ## 5. Set up postgreSQL HA
 
@@ -93,14 +103,15 @@ Author: **Nguyen Thu Ha**
     - Server 1: 172.16.149.134 - Server master
     - Server 2: 172.16.149.136 - Server slave 1
     - Server 3: 172.16.149.137 - Server slave 2 (standby replica)
-    - Server 4: 172.16.149.135 - Pgpool-II - server HA
+    - Server 4: 172.16.149.139 - HAproxy 
 - Các bước cấu hình
     - Thiết lập master-slave
-    - Thiết lập PostgreSQL HA với Pgpool-II
+    - Thiết lập PostgreSQL HA
+    - Thiết lập automatic failover và backup
 - [Chi tiết các bước cấu hình](https://github.com/nguyenha-meiii/vdt2024_phase2/tree/main/PostgresSQL%20HA)
 
 ### Mục tiêu
 - Xây dựng hệ thống master - slave với node slave chỉ phục vụ read queries còn master node phục vụ cả read-write queries và nếu master node bị hỏng 1 node slave lên thay thế làm node master
-- Thiết lập high availability (HA) cho PostgreSQL với Pgpool-II
+- Thiết lập high availability (HA) cho PostgreSQL với HAproxy
     - Kết nối 3 servers PostgreSQL thành 1 connection duy nhất
     - Thực hiện load balancing giữa các servers (mục tiêu của mình là đẩy hết các read queries qua slave và để master chỉ nhận các write queries nhưng hiện tại em chưa tìm ra được tutorial nào, kết quả đầu ra hiện tại sẽ là chia tải về 3 servers)
