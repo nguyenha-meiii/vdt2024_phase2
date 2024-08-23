@@ -3,10 +3,10 @@ Author: **Nguyen Thu Ha**
 
 ## Table of Contents 
 - [0. Project Description](#0-project-description)
-- [1. Reaserch](#1-research)
-- [2. PgBouncer](#2-pgbouncer)
-- [3. Pgpool-II](#3-pgpool-ii)
-- [4. Xây dựng mô hình](#4-xây-dựng-mô-hình-đảm-bảo-load-balancing--connection-pooling-kết-hợp-pgbouncer-và-pgpool-ii)
+- [1. PgBouncer](#1-pgbouncer)
+- [2. Pgpool-II](#2-pgpool-ii)
+- [3. HAproxy](#3-haproxy)
+- [4. Xây dựng mô hình](#4-xây-dựng-mô-hình)
 - [5. Set up PostgreSQL HA](#5-set-up-postgresql-ha)
 
 ## 0. Project description
