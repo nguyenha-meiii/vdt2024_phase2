@@ -274,3 +274,6 @@ Hoặc
         \q
     ```
     ![img](./assets/restore_db.png)
+
+# Store backup on Amazon S3
+- Tạo 1 file backup 5GB upload lên 

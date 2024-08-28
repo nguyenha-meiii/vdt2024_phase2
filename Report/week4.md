@@ -172,3 +172,14 @@
     ![img](../assets/restore_db.png)
 
 ## CÂU HỎI
+ ### 1. Restore backup diễn ra thành công ở node master nhưng khi check ở node replica (streaming replication) thì thấy data không được restore về như cũ => Inconsistency
+  => Việc restore cần thực hiện ở từng node một và streaming replication không có tác dụng trong trường hợp node master được restore bằng pg_basebackup hay do có lỗi ở file config ??? Hoặc có thể do để restore data thì cần xoá hết dữ liệu ở tất cả các node chứ không chỉ node primary
+  - Node slave 1(roreplica):
+  ![img](../assets/img1_week4.png)
+
+  - Node slave 2(standby): node này bị tắt trong quá trình update data ở primary nên em đã update data dựa trên file backup của primary như sau:
+  ![img](../assets/img2_week4.png)
+
+ ### 2. Hiện tại việc config đang diễn ra bằng tay và em chỉ đang backup ở node primary. Trong trường hợp người dùng xoá cả cụm database và muốn khôi phục lại cả cụm (3 server) như cũ thì em chưa tìm ra giải pháp
+
+ 
