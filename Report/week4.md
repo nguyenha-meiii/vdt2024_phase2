@@ -8,12 +8,13 @@
     - Khi node primary down, sẽ đẩy 1 node replica có data sát nhất với primary lên thay thế
     - Cần cơ chế xác nhận dữ liệu của replica gần nhất với primary
     - Tìm hiểu cơ chế phục hồi node từ backup
+    - Node primary chết thì sẽ khoá khỏi cluster luôn thay vào đó sẽ tạo một node mới và rétore lại data.
 
 
 ## NGHIÊN CỨU
 
 ### Split brain
-- Trong một hệ thống HA (VD): PostgreSQL cluster), bị phân mảnh do network patrition => Có nhiều hơn 1 master trong cluster => Dẫn đến mất mát và không đồng nhất dữ liệu
+- Trong một hệ thống HA (VD): PostgreSQL cluster, bị phân mảnh do network patrition => Có nhiều hơn 1 master trong cluster => Dẫn đến mất mát và không đồng nhất dữ liệu
 - Nguyên nhân dẫn đến split-brain:
     - Các vấn đề về mạng: network congestion, firewall misconfigurations, routing errors
     - Lỗi hardware/software: disk/memory failure, OS crash,...
@@ -34,6 +35,11 @@
         - Barman and pgBackrest
     - Continuous archiving and point-in-time recovery (PITR): combine a file system level backup and WAL files
 
+- Comparison of built-in backup method:
+    - pg_dump: This command-line utility generates a logical SQL script containing the SQL statements required to recreate the database's schema and data. It's a versatile method suitable for smaller databases.
+    - pg_dumpall: Similar to pg_dump, pg_dumpall creates SQL scripts for all databases in a PostgreSQL cluster. This method is handy when you need to back up multiple databases together.
+    - pg_basebackup: This method creates a physical copy of the entire PostgreSQL cluster. It's more suitable for larger databases and provides faster recovery times.
+    
 - Comparison of backup tools:
 ![img](../assets/backup_tools.png)
 
@@ -63,7 +69,8 @@
         -r, --max-rate=RATE    maximum transfer rate to transfer data directory
                                 (in kB/s, or use suffix 'k' or 'M')
         ```
-
+### Failover
+- Cần thêm 1 monitor để health check các nodes trong cluster: rempgr (bị "nháy" khi các replicas không giao tiếp được với nhau)
 
 ## KẾT QUẢ
 
@@ -110,6 +117,8 @@
     ```shell
         # create a backup
         $ sudo -u postgres pg_basebackup -h /var/run/postgresql -U postgres -Ft -z --wal-method=fetch --pgdata=- > /home/hanthust/test.tar.gz
+
+        # lưu bằng luồng stream thay vì vào file - stdout/stdin :)) đọc 1 xíu nhé
 
         # Verify if backup file is created
          $ ls -l /home/hanthust/test.tar.gz
@@ -174,12 +183,25 @@
 ## CÂU HỎI
  ### 1. Restore backup diễn ra thành công ở node master nhưng khi check ở node replica (streaming replication) thì thấy data không được restore về như cũ => Inconsistency
   => Việc restore cần thực hiện ở từng node một và streaming replication không có tác dụng trong trường hợp node master được restore bằng pg_basebackup hay do có lỗi ở file config ??? Hoặc có thể do để restore data thì cần xoá hết dữ liệu ở tất cả các node chứ không chỉ node primary
+  => Ans: Cần remove file ở cả replica trước khi thực hiện backup ở node primary
+
   - Node slave 1(roreplica):
   ![img](../assets/img1_week4.png)
 
   - Node slave 2(standby): node này bị tắt trong quá trình update data ở primary nên em đã update data dựa trên file backup của primary như sau:
   ![img](../assets/img2_week4.png)
 
- ### 2. Hiện tại việc config đang diễn ra bằng tay và em chỉ đang backup ở node primary. Trong trường hợp người dùng xoá cả cụm database và muốn khôi phục lại cả cụm (3 server) như cũ thì em chưa tìm ra giải pháp
+ ### 2. Hiện tại việc config đang diễn ra bằng tay và em chỉ đang backup ở node primary. Trong trường hợp người dùng xoá cả cụm database và muốn khôi phục lại cả cụm (3 servers) như cũ thì giải pháp như thế nào???
 
- 
+ ### 3.Em chưa hoàn thành task test việc đẩy database lên Amazon S3 và tải xuống cho việc restore ở primary node
+- Nếu sử dụng MinIO/S3 để lưu backup trong trường hợp sử dụng pg_basebackup:
+    - pg_basebackup không hỗ trợ tích hợp với MinIO/S3
+    - Cần các công cụ như MinIO Client/AWS CLI để tải bản sao lưu lên MinIO sau khi đã taọ bản sao lưu cục bọo trên máy chủ
+
+- Nếu sử dụng MinIO/S3 để lưu backup trong trường hợp sử dụng pgBackRest:
+    - pgBackrest hỗ trợ tích hợp với MinIO/S3
+
+ ### 4. Sau khi cài đặt xong backup and restore => failover (manuasl & automatic) => Ý tưởng ???
+    - Sơ qua về ý tưởng thì sẽ cần 1 tool monitor health check các nodes để biết khi nào có node bị fail để thay thế
+    - Config node slave => master ??? và sau khi node primary hoạt động bth thì có config primary thành 1 node slave??
+    - 

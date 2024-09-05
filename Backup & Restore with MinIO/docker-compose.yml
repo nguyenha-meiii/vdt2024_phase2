@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: hanthust
+      MINIO_ROOT_PASSWORD: 123456abc
+    volumes:
+      - data:/data
+      - config:/root/.minio
+      # - ./certs:/root/.minio/certs
+    command: server /data --console-address ":9001"
+
+volumes:
+  data:
+  config:
