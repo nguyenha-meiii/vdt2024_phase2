@@ -96,12 +96,12 @@
 
 - Khi tạo 1 node mới với yêu cầu backup data từ node primary thì ta sẽ có những giải pháp sau:
     - Cần config slave role ở node mới bằng tay hoặc bằng script
-        - Step 1: Install postgreSQL database: Cài đặt file bash script ở [link]() sau và thực hiện các câu lệnh
+        - Step 1: Install postgreSQL database: Cài đặt file bash script ở [link](https://github.com/nguyenha-meiii/vdt2024_phase2/blob/main/bash-script/install_postgresql.sh) sau và thực hiện các câu lệnh
         ```shell
         $ sudo chmod +x install_postgresql.sh
         $ ./install_postgresql.sh
         ```
-        - Step 2: Config slave role: Config bằng file bash script ở [link]() sau và thực hiện các câu lệnh
+        - Step 2: Config slave role: Config bằng file bash script ở [link](https://github.com/nguyenha-meiii/vdt2024_phase2/blob/main/bash-script/config_slave.sh) sau và thực hiện các câu lệnh
         ```shell
         $ sudo chmod +x config_slave.sh
         $ ./config_slave.sh
@@ -113,3 +113,21 @@
 
 
 ## CÂU HỎI
+
+### 1.Khi muốn thêm 1 node mới thì sẽ cần thêm IP của node đó vào trong file  `/etc/postgresql/14/main/pg_hba.conf` của node primary,điều này sẽ ảnh hưởng đến quá trình tự động hoá?
+- Gỉải pháp 1: Config ở node primary như sau:
+
+```shell
+    # Các bước trước vẫn được giữ nguyên
+    ...
+    # Chuyển qua user postgres
+    $ sudo vi /etc/postgresql/14/main/pg_hba.conf
+
+    # Thêm các địa chỉ IP của các node slave vào cuối file
+    host    replication     replicator      0.0.0.0/0               md5
+    host    replication     replicator      ::/0                    md5
+
+    # Khởi động lại PostgreSQL
+    $ systemctl restart postgresql
+```
+=> Phát sinh vấn đề liên quan đến failover khi node primary down, config lại từ đầu cho nút lên thay thế vị trí primary. Nếu lấy 1 node slave sẵn có sẽ phải làm ntn???
