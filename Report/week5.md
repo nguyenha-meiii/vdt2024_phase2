@@ -101,7 +101,7 @@
         $ sudo chmod +x install_postgresql.sh
         $ ./install_postgresql.sh
         ```
-        - Step 3: Thực hiện backup data từ minIO storage bằng file bash script ở [link]()
+        - Step 3: Thực hiện backup data từ minIO storage bằng file bash script ở [link](https://github.com/nguyenha-meiii/vdt2024_phase2/blob/main/bash-script/backup_data.sh)
            ```shell
         $ sudo chmod +x backup_data.sh
         $ ./backup_data.sh
