@@ -113,6 +113,8 @@
         ```
 
         - Note: cần config sao cho IP của node mới nằm trong file `/etc/postgresql/14/main/pg_hba.conf` của node primary
+        - Kết quả: Tạo được 1 node mới với nội dung data là data của node primary khi thực hiện backup => xuất hiện inconsistency nếu sau khi thực hiện backup node primary có những thay đổi về dữ liệu
+        ![img](../assets/week%205/img2.png)
 
     - Sử dụng `pgBackRest` hoặc `Barman`, hai tool này hỗ trợ sao lưu và phục hồi cả các file cấu hình
 
