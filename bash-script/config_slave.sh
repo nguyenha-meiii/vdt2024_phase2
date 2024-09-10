@@ -4,28 +4,8 @@
 PRIMARY_HOST="172.16.149.134"
 REPLICATOR_USER="replicator"
 PASSWORD="123456"
-MINIO_BUCKET="myminio/demo1/backups"
-BACKUP_FILE="test.tar.gz"
-LOCAL_BACKUP_PATH="/home/hanthust/$BACKUP_FILE"
+LOCAL_BACKUP_PATH="/home/hanthust/test.tar.gz"
 DATA_DIR="/var/lib/postgresql/14/main"
-POSTGRES_CONF="/etc/postgresql/14/main/postgresql.auto.conf" 
-
-# Cài đặt MinIO Client 
-if ! command -v mc &> /dev/null
-then
-    echo "MinIO Client (mc) không tìm thấy. Đang cài đặt..."
-    wget https://dl.min.io/client/mc/release/linux-amd64/mc
-    chmod +x mc
-    mv mc /usr/local/bin/
-    echo "MinIO Client (mc) đã được cài đặt."
-fi
-
-# Cấu hình MinIO Client
-mc alias set myminio http://10.61.220.133:9000 hanthust 123456abc --api S3v4
-
-# Tải file backup từ MinIO
-echo "Tải file backup từ MinIO..."
-mc cp myminio/$MINIO_BUCKET/$BACKUP_FILE $LOCAL_BACKUP_PATH
 
 # Dừng dịch vụ PostgreSQL
 echo "Dừng dịch vụ PostgreSQL..."

@@ -148,7 +148,7 @@
         # Stop postgreSQL
         $ sudo systemctl stop postgresql
 
-        # Clear the dât directory
+        # Clear the data directory
         $ sudo -i
         $ rm -rf /var/lib/postgresql/14/main/*
 

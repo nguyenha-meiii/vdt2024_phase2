@@ -37,7 +37,7 @@
             # Stream backup using mc pipe
             $ sudo -u postgres pg_basebackup -h  /var/run/postgresql -U postgres -Ft -z --wal-method=fetch --pgdata=- | mc pipe myminio/mybucket/backup.tar.gz
 
-            # Stream backup fỏ restoration 
+            # Stream backup for restoration 
             $ mc cat myminio/mybucket/backup.tar.gz | sudo -u postgres tar -xzvf - -C /var/lib/postgresql/14/main/
         ```
 
@@ -101,6 +101,11 @@
         $ sudo chmod +x install_postgresql.sh
         $ ./install_postgresql.sh
         ```
+        - Step 3: Thực hiện backup data từ minIO storage bằng file bash script ở [link]()
+           ```shell
+        $ sudo chmod +x backup_data.sh
+        $ ./backup_data.sh
+        ```
         - Step 2: Config slave role: Config bằng file bash script ở [link](https://github.com/nguyenha-meiii/vdt2024_phase2/blob/main/bash-script/config_slave.sh) sau và thực hiện các câu lệnh
         ```shell
         $ sudo chmod +x config_slave.sh
@@ -114,7 +119,7 @@
 
 ## CÂU HỎI
 
-### 1.Khi muốn thêm 1 node mới thì sẽ cần thêm IP của node đó vào trong file  `/etc/postgresql/14/main/pg_hba.conf` của node primary,điều này sẽ ảnh hưởng đến quá trình tự động hoá?
+#### 1. Khi muốn thêm 1 node mới thì sẽ cần thêm IP của node đó vào trong file  `/etc/postgresql/14/main/pg_hba.conf` của node primary,điều này sẽ ảnh hưởng đến quá trình tự động hoá?
 - Gỉải pháp 1: Config ở node primary như sau:
 
 ```shell
@@ -131,3 +136,4 @@
     $ systemctl restart postgresql
 ```
 => Phát sinh vấn đề liên quan đến failover khi node primary down, config lại từ đầu cho nút lên thay thế vị trí primary. Nếu lấy 1 node slave sẵn có sẽ phải làm ntn???
+    - Như với cụm patroni thì việc config ở file pg_hba.conf tất cả các node là như nhau, các file slave sẽ có thêm file signal.standby và việc này được tự động hoá bởi patroni với sự hỗ trợ của các tool như etcd, ZooKeeper, or Consul. VD: etcd quản lý trạng thái của cụm postgreSQL, khi có 1 sự thay đổi nào(vd: node primart down) sẽ update ETCD key-value store => Patroni sử dụng thông tin này để bình chọn ra node master
