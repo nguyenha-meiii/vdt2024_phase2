@@ -1,0 +1,25 @@
+[template]
+# Source template file
+src = "haproxy.tmpl"
+
+# The prefix to be used when accessing the etcd keys
+prefix = "/service/dbcluster"
+
+# Destination where the rendered HAProxy config file will be placed
+dest = "/etc/haproxy/haproxy.cfg"
+
+# Keys to watch in etcd (recursively fetch data under /service/dbcluster/)
+keys = [
+  "/",
+]
+
+# Command to check the HAProxy configuration syntax before reloading
+check_cmd = "/usr/local/sbin/haproxy -c -f {{ .src }}"
+
+# Command to reload HAProxy with the new configuration
+reload_cmd = "haproxy -f /etc/haproxy/haproxy.cfg -p /var/run/haproxy.pid -D -sf $(cat /var/run/haproxy.pid)"
+# reload_cmd = "haproxy -f /etc/haproxy/haproxy.cfg -p /var/run/haproxy.pid -D && echo $(cat /var/run/haproxy.pid)"
+# reload_cmd = "haproxy reload"
+
+# File mode for the generated HAProxy configuration file
+mode = "0644"

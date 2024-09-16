@@ -1,0 +1,24 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  haproxy:
+    image: myhaproxy
+    container_name: haproxy
+    ports:
+      - "5002:5000"
+      - "5001:5001"
+      - "7001:7000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./haproxy.cfg:/etc/haproxy/haproxy.cfg
+    environment:
+      ETCD_URL: http://172.16.149.138:2379
+    # command:
+    #   [
+    #     "haproxy",
+    #     "-f",
+    #     "/etc/haproxy/haproxy.cfg",
+    #     "-p",
+    #     "/var/run/haproxy.pid"
+    #   ]

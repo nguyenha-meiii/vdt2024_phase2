@@ -1,0 +1,48 @@
+global
+    maxconn 100
+
+defaults
+    log global
+    mode tcp
+    retries 2
+    timeout client 30m
+    timeout connect 4s
+    timeout server 30m
+    timeout check 5s
+
+frontend stats
+    mode http
+    bind *:7000
+    stats enable
+    stats uri /
+
+# Frontend for write traffic
+frontend pgsql_write
+    bind *:5001
+    mode tcp
+    default_backend pgsql_write_backend
+
+# Frontend for read traffic
+frontend pgsql_read
+    bind *:5002
+    mode tcp
+    default_backend pgsql_read_backend
+
+# Backend for write traffic (primary database)
+backend pgsql_write_backend
+    mode tcp
+    option pgsql-check user haproxy
+{{range gets "/members/*"}}{{ $data := json .Value }}
+{{ if eq $data.role "primary" }}
+    server {{base .Key}} {{base (index (split $data.conn_url "/") 2)}} maxconn 100 check
+{{end}}{{end}}
+
+# Backend for read traffic (replica databases)
+backend pgsql_read_backend
+    mode tcp
+    balance roundrobin
+    option pgsql-check user haproxy
+{{range gets "/members/*"}}{{ $data := json .Value }}
+{{ if eq $data.role "slave" }}
+    server {{base .Key}} {{base (index (split $data.conn_url "/") 2)}} maxconn 100 check
+{{end}}{{end}}
