@@ -3,10 +3,10 @@ version: '3.8'
 
 services:
   haproxy:
-    image: myhaproxy
+    image: haproxyv1
     container_name: haproxy
     ports:
-      - "5002:5000"
+      - "5002:5002"
       - "5001:5001"
       - "7001:7000"
     volumes:

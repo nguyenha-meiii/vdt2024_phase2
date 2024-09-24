@@ -2,10 +2,10 @@
 set -e
 
 # Start confd to dynamically update the HAProxy config
-confd -backend etcdv3 -node http://172.16.149.138:2379 -interval 10 &
+confd -backend etcdv3 -node http://172.16.149.138:2379 -interval 10 
 
 # Start HAProxy
-exec haproxy -f /etc/haproxy/haproxy.cfg 
+# exec haproxy -f /etc/haproxy/haproxy.cfg 
 
 
 #!/bin/bash

@@ -24,4 +24,4 @@ ENV ETCDCTL_API=3
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # HAProxy default command
-CMD ["haproxy", "-f", "/etc/haproxy/haproxy.cfg", "-p", "/var/run/haproxy.pid", "-D"]
+# CMD ["haproxy", "-f", "/etc/haproxy/haproxy.cfg", "-p", "/var/run/haproxy.pid", "-D"]

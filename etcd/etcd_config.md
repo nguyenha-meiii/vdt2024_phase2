@@ -1,3 +1,5 @@
+# SET UP ETCD TUTORIAL
+## Step 1: Set up and config etcd
 ETCD_LISTEN_PEER_URLS="http://172.16.149.138:2380"
 ETCD_LISTEN_CLIENT_URLS="http://localhost:2379,http://172.16.149.138:2379"
 ETCD_INITIAL_ADVERTISE_PEER_URLS="http://172.16.149.138:2380"
@@ -87,3 +89,27 @@ etcdctl put /service/dbcluster/members/node3 '{"conn_url":"postgres://172.16.149
 
 apt-get update
 apt-get install procps
+
+## Step 3: Set up API backend for etcd
+- Config file in this link[]
+- Set up environment to run backend
+```shell
+    $ python3 -m venv myenv
+    $ source myenv/bin/activate
+
+    # Install these packages for the first time
+    $ pip3 install Flask etcd3
+    $ pip install "protobuf==3.20.*"
+    
+    # Run API backend to update etcd
+    $ python3 auto_api.py
+    $ curl -X POST http://127.0.0.1:5005/update_cluster_info \
+  -H "Content-Type: application/json" \
+  -d '{
+        "nodes": [
+          {"name": "node1", "conn_url": "postgres://172.16.149.134:5432/postgres", "role": "slave"},
+          {"name": "node2", "conn_url": "postgres://172.16.149.136:5432/postgres", "role": "primary"},
+          {"name": "node3", "conn_url": "postgres://172.16.149.137:5432/postgres", "role": "slave"}
+        ]
+      }'
+```
